@@ -1,0 +1,54 @@
+import cv2
+import numpy as np
+
+class MyDetectionMethods:
+    @staticmethod
+    def preprocess_image(image, blur_ksize=5):
+        """
+        Preprocess the image by converting to grayscale and applying Gaussian blur.
+
+        Parameters:
+        image (numpy.ndarray): Input image.
+        blur_ksize (int): Kernel size for Gaussian blur (default is 5).
+
+        Returns:
+        numpy.ndarray: Preprocessed grayscale image.
+        """
+        grayscale = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        blurred = cv2.GaussianBlur(grayscale, (blur_ksize, blur_ksize), 0)
+        return blurred
+
+    @staticmethod
+    def detect_contours_with_canny(image, lower_threshold=100, upper_threshold=200):
+        """
+        Detect contours using the Canny edge detection method.
+
+        Parameters:
+        image (numpy.ndarray): Input image.
+        lower_threshold (int): Lower threshold for the Canny edge detector.
+        upper_threshold (int): Upper threshold for the Canny edge detector.
+
+        Returns:
+        list: Detected contours.
+        """
+        preprocessed_image = MyDetectionMethods.preprocess_image(image)
+        edges = cv2.Canny(preprocessed_image, lower_threshold, upper_threshold)
+        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        return contours
+
+    @staticmethod
+    def detect_contours_with_binarization(image, threshold_value=127):
+        """
+        Detect contours using binarization.
+
+        Parameters:
+        image (numpy.ndarray): Input image.
+        threshold_value (int): Threshold value for binarization.
+
+        Returns:
+        list: Detected contours.
+        """
+        preprocessed_image = MyDetectionMethods.preprocess_image(image)
+        _, binary_image = cv2.threshold(preprocessed_image, threshold_value, 255, cv2.THRESH_BINARY)
+        contours, _ = cv2.findContours(binary_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        return contours

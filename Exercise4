@@ -1,0 +1,38 @@
+import cv2 as cv
+import numpy as np
+import os
+new_directory = "/Users/stefenkaushik/" 
+os.chdir(new_directory)
+image = cv.imread("colormap.jpg")
+
+if image is None:
+    print("Error: Image not found.")
+    exit()
+
+blue_channel, green_channel, red_channel = cv.split(image)
+
+cv.imshow("Grayscale - Blue Channel", blue_channel)
+cv.imshow("Grayscale - Green Channel", green_channel)
+cv.imshow("Grayscale - Red Channel", red_channel)
+
+blue_only = np.zeros_like(image)
+blue_only[:, :, 0] = blue_channel 
+
+green_only = np.zeros_like(image)
+green_only[:, :, 1] = green_channel 
+
+red_only = np.zeros_like(image)
+red_only[:, :, 2] = red_channel  
+
+cv.imshow("Color - Blue Channel", blue_only)
+cv.imshow("Color - Green Channel", green_only)
+cv.imshow("Color - Red Channel", red_only)
+
+cv.waitKey(0)
+cv.destroyAllWindows()
+'''
+The code splits the input image into its blue, green, and red channels. 
+It then displays each channel in grayscale and creates separate color images showing only one channel at
+ a time (blue, green, or red). Finally, 
+it shows the original color images with only the respective channels visible.
+'''

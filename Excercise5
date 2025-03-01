@@ -1,0 +1,80 @@
+import cv2 as cv
+import numpy as np
+import os
+
+new_directory = "/Users/stefenkaushik/"  
+os.chdir(new_directory)
+
+image = cv.imread("piece05.png")
+
+if image is None:
+    print("Error: Image not found.")
+    exit()
+
+image = cv.resize(image, (600, 400))
+
+# converting the image to grayscale simplifies the data while retaining necessary information for contours.
+gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
+
+# Function for preprocessing and contour detection
+def process_image():
+    # Get trackbar positions
+    canny_lower = cv.getTrackbarPos("Canny Lower", "Trackbars")
+    canny_upper = cv.getTrackbarPos("Canny Upper", "Trackbars")
+
+    # Apply Gaussian Blur helps smooth the image and reduces noise
+    blur = cv.GaussianBlur(gray, (5, 5), 0)
+
+    # Apply Canny Edge Detection effectively identifies edges in the image, highlighting significant changes in pixel intensity.
+    edges = cv.Canny(blur, canny_lower, canny_upper)
+
+    # Dilation to close gaps in edges
+    kernel = np.ones((3, 3), np.uint8)
+    edges_dilated = cv.dilate(edges, kernel, iterations=1)
+
+    # Find contours helps in identifying and counting objects in the image.
+    contours, _ = cv.findContours(edges_dilated, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+
+    # Filter contours by area to ignore noise
+    min_area = cv.getTrackbarPos("Min Area", "Trackbars")
+    filtered_contours = [cnt for cnt in contours if cv.contourArea(cnt) > min_area]
+
+    contour_image = image.copy()
+    cv.drawContours(contour_image, filtered_contours, -1, (0, 255, 0), 2)
+
+    cv.imshow("Edges", edges_dilated)
+    cv.imshow("Contours", contour_image)
+
+    print("Number of Contours found = " + str(len(filtered_contours)))
+
+cv.namedWindow("Trackbars")
+
+cv.createTrackbar("Canny Lower", "Trackbars", 50, 255, lambda x: None)
+cv.createTrackbar("Canny Upper", "Trackbars", 150, 255, lambda x: None)
+cv.createTrackbar("Min Area", "Trackbars", 100, 1000, lambda x: None)
+
+while True:
+    process_image()
+
+    if cv.waitKey(1) & 0xFF == ord('q'):
+        break
+
+cv.destroyAllWindows()
+
+'''
+Preprocessing steps:
+
+grayscale:converting the image to grayscale simplifies the data while retaining necessary information for contours.
+
+Gaussian blur:Gaussian Blur helps smooth the image and reduces noise
+
+Canny edge detection:Canny Edge Detection effectively identifies edges in the image, highlighting significant changes in pixel intensity.
+
+Dilation:Dilation to close gaps in edges
+
+Canny edge detection is best for detecting sharp, high-contrast edges, while binarization is useful for segmenting the image into foreground and background. 
+To improve image pre-processing, ensure good lighting, high contrast, and minimize noise or motion blur during image acquisition. 
+These factors enhance edge detection accuracy and contour identification.
+
+Number of contours found 4
+'''

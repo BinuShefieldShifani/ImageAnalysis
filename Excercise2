@@ -1,0 +1,36 @@
+import cv2 as cv
+import os
+new_directory = "/Users/stefenkaushik/"  
+os.chdir(new_directory)
+image = cv.imread('colormap.jpg')
+
+if image is None:
+    print("Error: Image not found.")
+    exit()
+
+
+image = cv.resize(image, (600, 400))
+
+points = [(390, 30), (225, 118), (382, 262), (134, 290)]  
+
+for i, (x, y) in enumerate(points):
+    b, g, r = image[y, x]
+    print(f"Point {i+1} at ({x}, {y}): RGB = ({r}, {g}, {b})")
+    
+    cv.circle(image, (x, y), 5, (0, 0, 255), -1)  
+cv.imshow("Image with Points", image)
+
+cv.waitKey(0)
+cv.destroyAllWindows()
+
+'''
+The code loads an image, resizes it, and defines a list of points on the image. For each point, 
+it extracts the RGB values at that location,
+prints them, and draws a red circle at the point on the image.
+The modified image is then displayed with the points marked
+
+Point 1 at (390, 30): RGB = (0, 2, 201)
+Point 2 at (225, 118): RGB = (1, 254, 252)
+Point 3 at (382, 262): RGB = (255, 102, 155)
+Point 4 at (134, 290): RGB = (152, 203, 0)
+'''

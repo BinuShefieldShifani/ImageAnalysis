@@ -1,0 +1,86 @@
+import cv2
+import numpy as np
+from MyDetectionMethods import MyDetectionMethods
+
+# Define the ArUco dictionary and parameters
+aruco_dict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_6X6_250)
+detector_params = cv2.aruco.DetectorParameters_create()
+
+# Initialize the camera or video stream
+cap = cv2.VideoCapture(0)  # Use 0 for the default camera, or provide a video file path
+
+if not cap.isOpened():
+    print("Error: Could not open video stream.")
+    exit()
+
+print("Press 'q' to quit the video stream.")
+
+def calculate_pixel_to_cm_ratio(marker_corners, known_marker_size_cm):
+    """
+    Calculate the pixel-to-cm ratio using the detected ArUco marker.
+
+    Parameters:
+    marker_corners (numpy.ndarray): Detected corners of the ArUco marker.
+    known_marker_size_cm (float): Known size of the marker in cm.
+
+    Returns:
+    float: Pixel-to-cm ratio.
+    """
+    top_left, top_right, bottom_right, bottom_left = marker_corners[0]
+    pixel_width = np.linalg.norm(top_right - top_left)
+    return known_marker_size_cm / pixel_width
+
+while True:
+    ret, frame = cap.read()
+
+    if not ret:
+        print("Error: Unable to read frame from the video stream.")
+        break
+
+    # Detect ArUco markers in the frame
+    corners, ids, _ = cv2.aruco.detectMarkers(frame, aruco_dict, parameters=detector_params)
+
+    pixel_to_cm_ratio = None
+    if ids is not None:
+        # Draw detected markers and their bounding boxes
+        cv2.aruco.drawDetectedMarkers(frame, corners, ids)
+
+        # Assume the first detected marker is used for calibration
+        pixel_to_cm_ratio = calculate_pixel_to_cm_ratio(corners[0], 5.0)  # 5.0 cm is the known marker size
+
+    # Detect objects in the frame using contours
+    contours = MyDetectionMethods.detect_contours_with_binarization(frame)
+
+    for contour in contours:
+        # Get the bounding box of the contour
+        x, y, w, h = cv2.boundingRect(contour)
+
+        # Skip small or irregular contours
+        if w < 10 or h < 10:
+            continue
+
+        # If pixel-to-cm ratio is available, calculate dimensions in cm
+        if pixel_to_cm_ratio is not None:
+            width_cm = w * pixel_to_cm_ratio
+            height_cm = h * pixel_to_cm_ratio
+
+            # Filter for objects of specific sizes (credit card and AAA battery)
+            if (80.6 <= width_cm <= 90.6 and 48.9 <= height_cm <= 58.9) or \
+               (9.5 <= width_cm <= 11.5 and 39.5 <= height_cm <= 49.5):
+                # Draw a green rectangle around the object
+                cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+                # Display dimensions on the frame
+                label = f"{width_cm:.1f} cm x {height_cm:.1f} cm"
+                cv2.putText(frame, label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
+    # Show the live video stream with marker and object detection
+    cv2.imshow('ArUco Marker and Object Detection', frame)
+
+    # Break the loop when 'q' is pressed
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+# Release the video stream and close all windows
+cap.release()
+cv2.destroyAllWindows()

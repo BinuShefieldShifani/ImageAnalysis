@@ -1,0 +1,85 @@
+import cv2
+import numpy as np
+
+def mask_below_aruco(input_video, output_video, marker_size_mm, obj_width_mm, obj_height_mm, span_mm,x_offset_mm,aruco_dict=cv2.aruco.DICT_6X6_250, color=(51, 0, 0)):
+    """
+    Masks the region below detected ArUco markers in a video.
+    
+    Parameters:
+        input_video (str): Path to the input video.
+        output_video (str): Path to save the output video.
+        aruco_dict: The ArUco dictionary to use for marker detection.
+        offset (int): Offset in pixels below the marker to start masking.
+        color (tuple): Color of the mask, default is black.
+    """
+    # Load the ArUco dictionary and parameters
+    aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
+    parameters = cv2.aruco.DetectorParameters()
+    aruco_detector = cv2.aruco.ArucoDetector(aruco_dict, parameters)
+    
+    # Open the input video
+    cap = cv2.VideoCapture(input_video)
+    if not cap.isOpened():
+        print("Error: Unable to open the input video.")
+        return
+    
+    # Get video properties
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    fps = int(cap.get(cv2.CAP_PROP_FPS))
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    
+    # Create a VideoWriter object
+    out = cv2.VideoWriter(output_video, fourcc, fps, (width, height))
+    
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+        
+        # Detect ArUco markers
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        corners, ids, rejectedImgPoints = aruco_detector.detectMarkers(gray)
+        
+        if ids is not None:
+            for corner in corners:
+                # Get the bounding box coordinates of the marker
+                top_left = tuple(map(int, corner[0][0]))
+                bottom_right = tuple(map(int, corner[0][2]))
+                
+                # Calculate the pixel dimensions of the marker
+                marker_pixel_width = bottom_right[0] - top_left[0]
+                ppm = marker_pixel_width / marker_size_mm  # Pixels per millimeter
+                
+                # Calculate the object's pixel dimensions and position
+                obj_width_px = int(obj_width_mm * ppm)
+                obj_height_px = int(obj_height_mm * ppm)
+                span_px = int(span_mm * ppm)
+                x_offset_px = int(x_offset_mm * ppm)  # Convert horizontal offset to pixels
+                
+                # Define the mask's top-left and bottom-right corners
+                mask_top_left = (top_left[0] - x_offset_px, bottom_right[1] + span_px)
+                mask_bottom_right = (mask_top_left[0] + obj_width_px, mask_top_left[1] + obj_height_px)
+                
+                # Apply the mask to the frame
+                cv2.rectangle(frame, mask_top_left, mask_bottom_right, color, -1)
+        
+        # Write the masked frame to the output video
+        out.write(frame)
+    
+    # Release resources
+    cap.release()
+    out.release()
+    cv2.destroyAllWindows()
+    print(f"Masked video saved at {output_video}")
+
+# Example usage
+input_path = "/Users/stefenkaushik/input_video.mov"
+output_path = "/Users/stefenkaushik/output_video.mp4"
+marker_size_mm = 100  # Replace with your actual marker size in mm
+object_width_mm = 40.3
+object_height_mm = 30.5
+span_below_marker_mm = 75
+x_offset_mm = 23
+
+mask_below_aruco(input_path, output_path, marker_size_mm, object_width_mm, object_height_mm, span_below_marker_mm,x_offset_mm)

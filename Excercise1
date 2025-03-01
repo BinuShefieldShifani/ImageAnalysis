@@ -1,0 +1,53 @@
+import cv2
+import os
+print("Current Directory:", os.getcwd())
+new_directory = "/Users/stefenkaushik/"  
+os.chdir(new_directory)
+
+image = cv2.imread(cv2.samples.findFile("Original.png"))
+if image is None:
+    raise FileNotFoundError("Image 'Original.png' not found in the specified directory!")
+
+height, width, channels = image.shape 
+data_type = image.dtype  
+total_pixels = image.size  
+aspect_ratio = width / height  
+mean_intensity = image.mean()  
+max_intensity = image.max()  
+min_intensity = image.min()  
+
+image_type = "Grayscale" if channels == 1 else "Color (BGR format)"
+
+is_contiguous = image.flags['C_CONTIGUOUS']  
+
+
+print("\nImage Properties:")
+print(f"1. Height: {height} pixels")
+print(f"2. Width: {width} pixels")
+print(f"3. Channels: {channels} ({image_type})")
+print(f"4. Data Type: {data_type} (pixel values range 0-255 for uint8)")
+print(f"5. Total Pixels: {total_pixels}")
+print(f"6. Aspect Ratio: {aspect_ratio:.2f}")
+print(f"7. Mean Intensity: {mean_intensity:.2f}")
+print(f"8. Maximum Intensity: {max_intensity}")
+print(f"9. Minimum Intensity: {min_intensity}")
+print(f"10. Is Contiguous in Memory: {is_contiguous}")
+
+'''
+Image Properties:
+1. Height: 540 pixels
+2. Width: 1050 pixels
+3. Channels: 3 (Color (BGR format))
+4. Data Type: uint8 (pixel values range 0-255 for uint8)
+5. Total Pixels: 1701000
+6. Aspect Ratio: 1.94
+7. Mean Intensity: 56.83
+8. Maximum Intensity: 255
+9. Minimum Intensity: 0
+10. Is Contiguous in Memory: True
+
+The special property that has been automatically added by the CV2.imread function are:
+The image is loaded as a 3-channel image (assumed RGB or BGR), even though the original image appears to be a monochrome bitmap.
+Contiguous in Memory ensures that the image array is stored contiguously in memory, which is important for efficient processing. 
+If the property were `False`, some OpenCV functions might fail or perform inefficiently, as they rely on contiguous memory for fast access.
+'''

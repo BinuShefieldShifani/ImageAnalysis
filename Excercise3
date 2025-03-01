@@ -1,0 +1,90 @@
+import cv2 as cv
+import numpy as np
+import os
+
+new_directory = "/Users/stefenkaushik/" 
+os.chdir(new_directory)
+
+image = cv.imread("piece03.png", cv.IMREAD_GRAYSCALE)
+
+if image is None:
+    print("Error: Image not found.")
+    exit()
+
+lower_vert = 0
+upper_vert = 255
+lower_horiz = 0
+upper_horiz = 255
+
+def update_threshold(_):
+    global lower_vert, upper_vert, lower_horiz, upper_horiz
+
+    lower_vert = cv.getTrackbarPos("Lower Vertical", "Dynamic Thresholds")
+    upper_vert = cv.getTrackbarPos("Upper Vertical", "Dynamic Thresholds")
+
+    lower_horiz = cv.getTrackbarPos("Lower Hori", "Dynamic Thresholds")
+    upper_horiz = cv.getTrackbarPos("Upper Hori", "Dynamic Thresholds")
+
+    _, thresh_binary_vert = cv.threshold(image, lower_vert, upper_vert, cv.THRESH_BINARY)
+    _, thresh_binary_inv_vert = cv.threshold(image, lower_vert, upper_vert, cv.THRESH_BINARY_INV)
+    _, thresh_trunc_vert = cv.threshold(image, lower_vert, upper_vert, cv.THRESH_TRUNC)
+    _, thresh_tozero_vert = cv.threshold(image, lower_vert, upper_vert, cv.THRESH_TOZERO)
+    _, thresh_tozero_inv_vert = cv.threshold(image, lower_vert, upper_vert, cv.THRESH_TOZERO_INV)
+
+    _, thresh_binary_horiz = cv.threshold(image, lower_horiz, upper_horiz, cv.THRESH_BINARY)
+    _, thresh_binary_inv_horiz = cv.threshold(image, lower_horiz, upper_horiz, cv.THRESH_BINARY_INV)
+    _, thresh_trunc_horiz = cv.threshold(image, lower_horiz, upper_horiz, cv.THRESH_TRUNC)
+    _, thresh_tozero_horiz = cv.threshold(image, lower_horiz, upper_horiz, cv.THRESH_TOZERO)
+    _, thresh_tozero_inv_horiz = cv.threshold(image, lower_horiz, upper_horiz, cv.THRESH_TOZERO_INV)
+
+    target_size = (image.shape[1], image.shape[0])
+    thresh_binary_inv_vert = cv.resize(thresh_binary_inv_vert, target_size)
+    thresh_trunc_vert = cv.resize(thresh_trunc_vert, target_size)
+    thresh_tozero_vert = cv.resize(thresh_tozero_vert, target_size)
+    thresh_tozero_inv_vert = cv.resize(thresh_tozero_inv_vert, target_size)
+
+    thresh_binary_inv_horiz = cv.resize(thresh_binary_inv_horiz, target_size)
+    thresh_trunc_horiz = cv.resize(thresh_trunc_horiz, target_size)
+    thresh_tozero_horiz = cv.resize(thresh_tozero_horiz, target_size)
+    thresh_tozero_inv_horiz = cv.resize(thresh_tozero_inv_horiz, target_size)
+
+    combined_horizontally = np.hstack([
+        thresh_binary_horiz, thresh_binary_inv_horiz,
+        thresh_trunc_horiz, thresh_tozero_horiz, thresh_tozero_inv_horiz
+    ])
+    
+    combined_vertically = np.vstack([
+        thresh_binary_vert, thresh_binary_inv_vert,
+        thresh_trunc_vert, thresh_tozero_vert, thresh_tozero_inv_vert
+    ])
+
+    cv.imshow("Vertical Thresholds", combined_vertically)
+
+    cv.imshow("Horizontal Thresholds", combined_horizontally)
+
+cv.namedWindow("Dynamic Thresholds")
+
+cv.createTrackbar("Lower Vertical", "Dynamic Thresholds", 0, 255, update_threshold)
+cv.createTrackbar("Upper Vertical", "Dynamic Thresholds", 255, 255, update_threshold)
+
+cv.createTrackbar("Lower Hori", "Dynamic Thresholds", 0, 255, update_threshold)
+cv.createTrackbar("Upper Hori", "Dynamic Thresholds", 255, 255, update_threshold)
+
+update_threshold(0)
+
+cv.waitKey(0)
+cv.destroyAllWindows()
+
+'''
+When using np.hstack() or np.vstack() to combine images, NumPy merges the arrays by aligning them along the specified axis (horizontal or vertical). imshow() 
+then reads this merged array as a single image, where pixel values are combined across the width (for horizontal) or height (for vertical). The resulting image is 
+displayed as one large image, reflecting the combined pixel values from all input images.
+
+horizontal stack thersholds:92(lower),177(higher)
+
+vertical stack thresholds:83(lower),191(higher)
+
+The objects typically show up in all images/filters within the threshold range where pixel values are distinctly separated from the background, usually between 0 and 255. 
+A higher resolution than 0-255 in the trackbar is unnecessary because pixel values in an 8-bit image are already confined to the 0-255 range, making values outside this range redundant. 
+Increasing trackbar resolution would only complicate the control without providing any additional information.
+'''
